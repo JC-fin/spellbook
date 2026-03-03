@@ -1,6 +1,7 @@
 {%- macro stablecoins_transfers(
   blockchain,
-  token_list
+  token_list,
+  exclude_tx_hashes = []
 ) -%}
 
 with
@@ -40,6 +41,11 @@ left join {{ source('prices', 'fx_exchange_rates') }} as fx
   and t.block_date = fx.date
 {% if is_incremental() %}
 where {{ incremental_predicate('t.block_date') }}
+  {% if exclude_tx_hashes | length > 0 %}
+  and t.tx_hash not in ({{ exclude_tx_hashes | join(', ') }})
+  {% endif %}
+{% elif exclude_tx_hashes | length > 0 %}
+where t.tx_hash not in ({{ exclude_tx_hashes | join(', ') }})
 {% endif %}
 
 {% endmacro %}
